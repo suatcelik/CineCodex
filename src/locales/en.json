@@ -1,0 +1,73 @@
+{
+    "welcome": "Welcome",
+    "onboarding_sub": "Ready to keep your personal movie journal?",
+    "select_lang": "SELECT LANGUAGE",
+    "start": "Let's Start!",
+    "auto_dark_mode": "Automatic Dark Mode Enabled",
+    "home_tab": "Explore",
+    "search_tab": "Search",
+    "profile_tab": "Profile",
+    "trending_week": "Trending This Week",
+    "community_watching": "What's Community Watching?",
+    "view_all": "View All",
+    "remember_save": "Remember, Save It!",
+    "cta_desc": "Create your own cinema library by taking notes on the movies you watch.",
+    "explore_now": "Explore Now",
+    "search_title": "Search",
+    "search_placeholder": "Search movies or TV shows...",
+    "unknown_date": "Unknown",
+    "no_results": "no results found.",
+    "search_empty_state": "Find your favorite movies and start taking notes.",
+    "loading": "Loading...",
+    "movie_detail": {
+        "summary": "Summary",
+        "cast": "Cast",
+        "add_note_btn": "Add Note / Rate",
+        "no_summary": "No summary available for this movie.",
+        "runtime_unit": "min"
+    },
+    "interaction_modal": {
+        "title_suffix": "What do you think?",
+        "watched": "Watched",
+        "watchlist": "Watchlist",
+        "your_rating": "YOUR RATING",
+        "your_note": "YOUR PERSONAL NOTE",
+        "note_placeholder": "Pour your thoughts about the movie here...",
+        "save_btn": "Save to My Journal"
+    },
+    "profile": {
+        "stats_watched": "WATCHED",
+        "stats_avg": "AVG RATING",
+        "timeline": "Timeline",
+        "empty_timeline": "You haven't rated any movies yet. Start by adding your first movie!",
+        "pro_member": "PRO MEMBER"
+    },
+    "settings": {
+        "title": "Settings",
+        "language": "App Language",
+        "notifications": "Notifications",
+        "share_timeline": "Share Timeline",
+        "follow_us": "Follow Us",
+        "logout": "Logout",
+        "logout_confirm": "Your session will be closed. Are you sure?",
+        "cancel": "Cancel",
+        "premium_desc": "Unlimited notes and analytics"
+    },
+    "premium": {
+        "title": "SineNot Premium",
+        "sub": "Take your cinema passion to the next level, remove limits.",
+        "feature_1_title": "Unlimited Notes & Rating",
+        "feature_1_sub": "Save everything you watch without any restrictions.",
+        "feature_2_title": "Deep Analytics",
+        "feature_2_sub": "Analyze your viewing habits with visual charts.",
+        "feature_3_title": "Special App Themes",
+        "feature_3_sub": "Unlock special designs like Cinema Hall and Retro.",
+        "feature_4_title": "Collections",
+        "feature_4_sub": "Create unlimited number of custom movie lists.",
+        "annual_plan": "Annual Plan",
+        "annual_sub": "Try 7 days free, then $19.99/year",
+        "save_tag": "50% SAVE",
+        "maybe_later": "Maybe Later"
+    },
+    "limit_reached": "Note limit reached. Upgrade to Premium!"
+}

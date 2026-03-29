@@ -1,98 +1,86 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { FlatList, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { getImageUrl, getTrendingMovies } from '../../src/lib/tmdb';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    const [trending, setTrending] = useState([]);
+    const router = useRouter();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    useEffect(() => {
+        getTrendingMovies().then(setTrending);
+    }, []);
+
+    return (
+        <ScrollView className="flex-1 bg-background">
+            {/* 1. Hero Section (Trend Slider) */}
+            <View className="h-[450px] w-full">
+                <FlatList
+                    data={trending.slice(0, 5)}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            onPress={() => router.push(`/movie/${item.id}`)}
+                            activeOpacity={0.9}
+                            className="w-screen h-full"
+                        >
+                            <Image
+                                source={{ uri: getImageUrl(item.poster_path) }}
+                                className="w-full h-full"
+                                resizeMode="cover"
+                            />
+                            <LinearGradient
+                                colors={['transparent', 'rgba(2, 6, 23, 0.8)', '#020617']}
+                                className="absolute bottom-0 w-full h-40 justify-end px-6 pb-6"
+                            >
+                                <Text className="text-white text-3xl font-black">{item.title}</Text>
+                                <Text className="text-primary font-bold mt-1">#1 Bu Hafta Trendlerde</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    )}
+                />
+            </View>
+
+            {/* 2. Topluluk Verileri (En Çok Konuşulanlar) */}
+            <View className="px-6 mt-8">
+                <View className="flex-row justify-between items-center mb-4">
+                    <Text className="text-white text-xl font-bold tracking-tight">Topluluk Ne İzliyor?</Text>
+                    <TouchableOpacity><Text className="text-primary font-medium">Tümünü Gör</Text></TouchableOpacity>
+                </View>
+
+                <FlatList
+                    data={trending.slice(5, 15)}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            onPress={() => router.push(`/movie/${item.id}`)}
+                            className="mr-4 w-32"
+                        >
+                            <Image
+                                source={{ uri: getImageUrl(item.poster_path) }}
+                                className="w-32 h-48 rounded-2xl border border-slate-800"
+                            />
+                            <Text className="text-slate-300 mt-2 font-semibold" numberOfLines={1}>{item.title}</Text>
+                            <View className="flex-row items-center mt-1">
+                                <Text className="text-accent text-xs font-bold">★ {item.vote_average.toFixed(1)}</Text>
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                />
+            </View>
+
+            {/* 3. "Not Almaya Başla" CTA (Harekete Geçirici Mesaj) */}
+            <View className="mx-6 my-10 p-6 bg-surface rounded-3xl border border-slate-800">
+                <Text className="text-white text-lg font-bold">Unutma, Kaydet!</Text>
+                <Text className="text-slate-400 mt-1">İzlediğin filmlere not tutarak kendi sinema kütüphaneni oluştur.</Text>
+                <TouchableOpacity className="bg-white mt-4 py-3 rounded-full">
+                    <Text className="text-black text-center font-bold text-base">Hemen Keşfet</Text>
+                </TouchableOpacity>
+            </View>
+        </ScrollView>
+    );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});

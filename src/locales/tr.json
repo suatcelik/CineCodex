@@ -1,0 +1,73 @@
+{
+    "welcome": "Hoş Geldin",
+    "onboarding_sub": "Kişisel film günlüğünü tutmaya hazır mısın?",
+    "select_lang": "DİL SEÇİN",
+    "start": "Hadi Başlayalım!",
+    "auto_dark_mode": "Otomatik Karanlık Mod Aktif",
+    "home_tab": "Keşfet",
+    "search_tab": "Ara",
+    "profile_tab": "Profil",
+    "trending_week": "Bu Hafta Trendler",
+    "community_watching": "Topluluk Ne İzliyor?",
+    "view_all": "Hepsini Gör",
+    "remember_save": "Unutma, Kaydet!",
+    "cta_desc": "İzlediğin filmlere notlar alarak kendi sinema kütüphaneni oluştur.",
+    "explore_now": "Şimdi Keşfet",
+    "search_title": "Ara",
+    "search_placeholder": "Film veya dizi ara...",
+    "unknown_date": "Bilinmiyor",
+    "no_results": "sonuç bulunamadı.",
+    "search_empty_state": "Favori filmlerini bul ve not almaya başla.",
+    "loading": "Yükleniyor...",
+    "movie_detail": {
+        "summary": "Özet",
+        "cast": "Oyuncular",
+        "add_note_btn": "Not Ekle / Puanla",
+        "no_summary": "Bu film için henüz bir özet bulunmuyor.",
+        "runtime_unit": "dk"
+    },
+    "interaction_modal": {
+        "title_suffix": "Ne düşünüyorsun?",
+        "watched": "İzledim",
+        "watchlist": "İzleyeceğim",
+        "your_rating": "PUANIN",
+        "your_note": "KİŞİSEL NOTUN",
+        "note_placeholder": "Filmle ilgili düşüncelerini buraya dök...",
+        "save_btn": "Günlüğüme Kaydet"
+    },
+    "profile": {
+        "stats_watched": "İZLENEN",
+        "stats_avg": "ORT. PUAN",
+        "timeline": "Zaman Tüneli",
+        "empty_timeline": "Henüz bir film notlamadın. İlk filmini ekleyerek günlüğünü oluşturmaya başla!",
+        "pro_member": "PRO ÜYE"
+    },
+    "settings": {
+        "title": "Ayarlar",
+        "language": "Uygulama Dili",
+        "notifications": "Bildirimler",
+        "share_timeline": "Zaman Tünelini Paylaş",
+        "follow_us": "Bizi Takip Edin",
+        "logout": "Çıkış Yap",
+        "logout_confirm": "Oturumunuz kapatılacaktır. Emin misiniz?",
+        "cancel": "İptal",
+        "premium_desc": "Sınırsız not ve analizler"
+    },
+    "premium": {
+        "title": "SineNot Premium",
+        "sub": "Sinema tutkunu bir üst seviyeye taşı, sınırları kaldır.",
+        "feature_1_title": "Sınırsız Not ve Puanlama",
+        "feature_1_sub": "Hiçbir kısıtlama olmadan tüm izlediklerini kaydet.",
+        "feature_2_title": "Derin Analizler",
+        "feature_2_sub": "İzleme alışkanlıklarını görsel grafiklerle analiz et.",
+        "feature_3_title": "Özel Uygulama Temaları",
+        "feature_3_sub": "Sinema Salonu ve Retro gibi özel tasarımları aç.",
+        "feature_4_title": "Koleksiyonlar",
+        "feature_4_sub": "Sınırsız sayıda özel film listesi oluştur.",
+        "annual_plan": "Yıllık Plan",
+        "annual_sub": "7 gün ücretsiz dene, sonra ₺199/yıl",
+        "save_tag": "%50 TASARRUF",
+        "maybe_later": "Belki Daha Sonra"
+    },
+    "limit_reached": "Not limitine ulaşıldı. Premium'a geç!"
+}
