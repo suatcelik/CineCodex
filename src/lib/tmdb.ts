@@ -21,7 +21,9 @@ export const getPopularMovies = async () => {
     return data.results;
 };
 
-export const getImageUrl = (path: string) => `https://image.tmdb.org/t/p/w500${path}`;
+// src/lib/tmdb.ts içindeki fonksiyonu buna çevir:
+export const getImageUrl = (path: string | null | undefined) =>
+    path ? `https://image.tmdb.org/t/p/w500${path}` : null;
 
 
 
@@ -31,7 +33,8 @@ export const searchMovies = async (query: string, language: string = 'tr-TR') =>
     const { data } = await tmdbApi.get('/search/movie', {
         params: {
             query,
-            language, // Kullanıcının seçtiği dili kullanıyoruz
+            language,
+            include_adult: false, // Kullanıcının seçtiği dili kullanıyoruz
         },
     });
     return data.results;

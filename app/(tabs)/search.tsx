@@ -1,79 +1,114 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, SafeAreaView, Text, TextInput, View } from 'react-native';
+import { FlatList, Keyboard, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Loader from '../../src/components/Loader';
 import MovieCard from '../../src/components/MovieCard';
 import { searchMovies } from '../../src/lib/tmdb';
-import { useStore } from '../../src/store/useStore'; // Zustand store'dan dil bilgisi
+import { useStore } from '../../src/store/useStore';
+import { Movie } from '../../src/types/movie';
 
 export default function SearchScreen() {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]);
+    const [results, setResults] = useState<Movie[]>([]);
     const [loading, setLoading] = useState(false);
-    const { language } = useStore(); // Kullanıcının seçtiği dil
+    const { language } = useStore();
     const { t } = useTranslation();
 
-    // Arama Logic'i (Debounce özelliği ekleyerek API'yi yormayalım)
+    // Arama Fonksiyonu (Debounce uygulanmış)
     useEffect(() => {
-        if (query.length < 2) {
+        if (query.trim().length < 2) {
             setResults([]);
+            setLoading(false);
             return;
         }
 
-        const delayDebounceFn = setTimeout(() => {
+        const delayDebounceFn = setTimeout(async () => {
             setLoading(true);
-            searchMovies(query, language === 'tr' ? 'tr-TR' : 'en-US').then((data) => {
+            try {
+                const langCode = language === 'tr' ? 'tr-TR' : 'en-US';
+                const data = await searchMovies(query, langCode);
                 setResults(data);
+            } catch (error) {
+                console.error("Arama hatası:", error);
+            } finally {
                 setLoading(false);
-            });
-        }, 500); // Kullanıcı yazmayı bıraktıktan 500ms sonra ara
+            }
+        }, 600); // Kullanıcı yazmayı bıraktıktan 600ms sonra API'ye gider
 
         return () => clearTimeout(delayDebounceFn);
-    }, [query]);
+    }, [query, language]);
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            {/* Header & Arama Çubuğu */}
-            <View className="px-6 pt-6 pb-4 border-b border-slate-900 bg-background/90">
-                <Text className="text-white text-3xl font-black mb-4 tracking-tighter">
+            {/* 1. Üst Kısım: Arama Çubuğu */}
+            <View className="px-6 pt-4 pb-2">
+                <Text className="text-white text-3xl font-black mb-6 tracking-tight">
                     {t('search_title')}
                 </Text>
-                <TextInput
-                    value={query}
-                    onChangeText={setQuery}
-                    placeholder={t('search_placeholder')}
-                    placeholderTextColor="#64748b" // slate-500
-                    className="bg-surface text-white p-4 rounded-full border border-slate-800 text-base"
-                />
+
+                <View className="relative">
+                    <View className="absolute left-4 top-4 z-10">
+                        <Ionicons name="search" size={20} color="#64748b" />
+                    </View>
+
+                    <TextInput
+                        value={query}
+                        onChangeText={setQuery}
+                        placeholder={t('search_placeholder')}
+                        placeholderTextColor="#475569"
+                        autoCapitalize="none"
+                        className="bg-surface text-white pl-12 pr-12 py-4 rounded-2xl border border-slate-800 text-base"
+                    />
+
+                    {query.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => { setQuery(''); setResults([]); }}
+                            className="absolute right-4 top-4"
+                        >
+                            <Ionicons name="close-circle" size={20} color="#64748b" />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
 
-            {/* Arama Sonuçları */}
+            {/* 2. Sonuç Alanı */}
             <View className="flex-1 px-6 mt-4">
                 {loading ? (
-                    <View className="flex-1 justify-center items-center">
-                        <ActivityIndicator size="large" color="#dc2626" />
-                    </View>
+                    <Loader />
                 ) : results.length > 0 ? (
                     <FlatList
                         data={results}
                         numColumns={2}
-                        columnWrapperClassName="justify-between" // İki sütun arası boşluk
+                        columnWrapperClassName="justify-between"
                         keyExtractor={(item) => item.id.toString()}
                         showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 100 }}
                         renderItem={({ item }) => <MovieCard movie={item} />}
+                        onScrollBeginDrag={Keyboard.dismiss} // Kaydırırken klavyeyi kapat
                     />
                 ) : query.length >= 2 ? (
-                    // Sonuç Bulunamadı Durumu
-                    <View className="flex-1 justify-center items-center">
-                        <Text className="text-slate-500 text-lg">
+                    // Sonuç Bulunamadı
+                    <View className="flex-1 justify-center items-center px-10">
+                        <Ionicons name="alert-circle-outline" size={60} color="#1e293b" />
+                        <Text className="text-slate-500 text-center text-lg mt-4 font-medium">
                             "{query}" {t('no_results')}
                         </Text>
                     </View>
                 ) : (
                     // Boş Durum (İlk açılış)
                     <View className="flex-1 justify-center items-center px-10">
-                        <Text className="text-primary text-5xl mb-4">🔍</Text>
-                        <Text className="text-slate-600 text-center text-base leading-6">
+                        <View className="bg-surface p-8 rounded-full mb-6">
+                            <Ionicons name="film-outline" size={50} color="#dc2626" />
+                        </View>
+                        <Text className="text-white text-xl font-bold text-center mb-2">
                             {t('search_empty_state')}
+                        </Text>
+                        <Text className="text-slate-500 text-center leading-6">
+                            {language === 'tr'
+                                ? 'Milyonlarca film ve dizi arasından dilediğini bul, notlarını tutmaya başla.'
+                                : 'Find any movie among millions and start keeping your notes.'}
                         </Text>
                     </View>
                 )}
