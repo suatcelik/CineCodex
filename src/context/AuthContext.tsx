@@ -1,7 +1,7 @@
 import { Session, User } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import Purchases, { CustomerInfo } from 'react-native-purchases';
+import Purchases from 'react-native-purchases';
 import { supabase } from '../lib/supabase';
 
 // 1. Context Tipi Tanımlama
@@ -14,14 +14,7 @@ type AuthContextType = {
     refreshProfile: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType>({
-    user: null,
-    session: null,
-    profile: null,
-    isPremium: false,
-    loading: true,
-    refreshProfile: async () => { },
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -61,8 +54,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             // 2. RevenueCat Yapılandırması ve Premium Kontrolü
             await setupRevenueCat(currentUser.id);
         } else {
+            // 3. Çıkış İşlemleri
             setProfile(null);
             setIsPremium(false);
+
+            // Güvenli çıkış: Yapılandırılmamışsa bile hata vermemesi için try-catch
+            try {
+                await Purchases.logOut();
+            } catch (e) {
+                // Sessizce geç
+            }
         }
         setLoading(false);
     };
@@ -83,23 +84,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const setupRevenueCat = async (userId: string) => {
         try {
-            // RevenueCat'i kullanıcı ID'si ile bağla
+            // RevenueCat'i yapılandır (Doğrudan deniyoruz, catch ile hatayı yönetiyoruz)
             await Purchases.configure({
-                apiKey: Platform.OS === 'ios' ? 'YOUR_IOS_KEY' : 'YOUR_ANDROID_KEY',
+                apiKey: Platform.OS === 'ios' ? 'YOUR_IOS_KEY' : 'test_aKZOpOpanLygSVPmyLVbPdBCFLn',
                 appUserID: userId
             });
 
-            // Abonelik durumunu kontrol et
-            const customerInfo: CustomerInfo = await Purchases.getCustomerInfo();
-            // 'pro' RevenueCat dashboard'da tanımladığın Entitlement ID olmalı
-            setIsPremium(!!customerInfo.entitlements.active['pro']);
+            // İlk abonelik kontrolü
+            const customerInfo = await Purchases.getCustomerInfo();
+            setIsPremium(!!customerInfo.entitlements.active['CineCodex Pro']);
 
-            // Dinamik dinleyici: Abonelik durumu anlık değişirse (satın alma anı)
+            // Dinamik dinleyici: Satın alma anında tetiklenir
             Purchases.addCustomerInfoUpdateListener((info) => {
-                setIsPremium(!!info.entitlements.active['pro']);
+                setIsPremium(!!info.entitlements.active['CineCodex Pro']);
             });
-        } catch (err) {
-            console.error("RevenueCat hatası:", err);
+
+        } catch (err: any) {
+            // Eğer zaten yapılandırıldı hatası gelirse, sadece bilgileri güncelle
+            if (err.message?.includes("already set") || err.message?.includes("instance already set")) {
+                try {
+                    const info = await Purchases.getCustomerInfo();
+                    setIsPremium(!!info.entitlements.active['CineCodex Pro']);
+                } catch (innerErr) {
+                    // Veri çekilemezse sessiz kal
+                }
+                return;
+            }
+            console.log("RevenueCat Yapılandırma Notu:", err.message);
         }
     };
 
@@ -114,7 +125,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 };
 
-// Custom Hook: Uygulama içinde kolay erişim için
+// Custom Hook
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {

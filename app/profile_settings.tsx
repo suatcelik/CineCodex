@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Alert, SafeAreaView, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
-import { useAuth } from '../../src/context/AuthContext';
-import i18n from '../../src/lib/i18n';
-import { supabase } from '../../src/lib/supabase';
-import { useStore } from '../../src/store/useStore';
+import { useAuth } from '../src/context/AuthContext';
+import i18n from '../src/lib/i18n';
+import { supabase } from '../src/lib/supabase';
+import { useStore } from '../src/store/useStore';
 
 export default function SettingsScreen() {
     const { profile } = useAuth();
@@ -21,7 +21,7 @@ export default function SettingsScreen() {
     const onShareTimeline = async () => {
         try {
             await Share.share({
-                message: `${profile?.username || 'SineNot'} ${t('share_message', 'kullanıcısının film günlüğüne göz at!')}`,
+                message: `${profile?.username || 'CineCodex'} ${t('share_message', 'kullanıcısının film günlüğüne göz at!')}`,
             });
         } catch (error) {
             console.log(error);
@@ -93,7 +93,7 @@ export default function SettingsScreen() {
                 </View>
 
                 <View className="items-center py-10">
-                    <Text className="text-slate-700 font-bold tracking-[6px] text-[10px] uppercase">SineNot v1.0</Text>
+                    <Text className="text-slate-700 font-bold tracking-[6px] text-[10px] uppercase">CineCodex v1.0</Text>
                 </View>
             </ScrollView>
         </SafeAreaView>

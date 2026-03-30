@@ -51,7 +51,7 @@ function RootLayoutNav() {
 
     // Yükleme sırasında Loader göster
     if (authLoading) {
-        return <Loader fullScreen message="SineNot Hazırlanıyor..." />;
+        return <Loader fullScreen message="CineCodex Hazırlanıyor..." />;
     }
 
     return (

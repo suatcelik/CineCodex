@@ -11,7 +11,7 @@ module.exports = {
     extend: {
       colors: {
         // Uygulamanın Ana Renkleri
-        primary: "#dc2626",    // SineNot Kırmızısı (red-600)
+        primary: "#dc2626",    // CineCodex Kırmızısı (red-600)
         background: "#020617", // Çok koyu lacivert/siyah (slate-950)
         surface: "#0f172a",    // Kartlar ve Inputlar için (slate-900)
         accent: "#f59e0b",     // Yıldızlar ve Premium vurgular için (amber-500)
