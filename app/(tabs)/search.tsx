@@ -194,7 +194,7 @@ export default function SearchScreen() {
                             {query.length >= 2 ? t('no_results') : t('search_empty_state')}
                         </Text>
                         <Text className="text-slate-500 text-center leading-6">
-                            {query.length >= 2 ? `"${query}" için sonuç bulamadık.` : t('search_description')}
+                            {query.length >= 2 ? `"${query}" için sonuç bulamadık.` : t('CineCodex')}
                         </Text>
                     </View>
                 )}

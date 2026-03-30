@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ActionModal from '../../src/components/ActionModal';
 import Loader from '../../src/components/Loader';
 import { useAuth } from '../../src/context/AuthContext';
+import { supabase } from '../../src/lib/supabase'; // Supabase eklendi
 import { getImageUrl, getMovieDetails } from '../../src/lib/tmdb';
 
 export default function MovieDetailScreen() {
@@ -19,9 +20,13 @@ export default function MovieDetailScreen() {
     const [movie, setMovie] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [isInWatchlist, setIsInWatchlist] = useState(false); // Watchlist durumu
 
     useEffect(() => {
-        if (id) fetchDetails();
+        if (id) {
+            fetchDetails();
+            checkWatchlistStatus();
+        }
     }, [id]);
 
     const fetchDetails = async () => {
@@ -36,7 +41,60 @@ export default function MovieDetailScreen() {
         }
     };
 
-    // Fragman ve Platform Verileri
+    // Filmin listeye ekli olup olmadığını kontrol et
+    const checkWatchlistStatus = async () => {
+        if (!user) return;
+        try {
+            const { data, error } = await supabase
+                .from('watchlist')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('movie_id', Number(id))
+                .single();
+
+            if (data) setIsInWatchlist(true);
+            else setIsInWatchlist(false);
+        } catch (error) {
+            // Kayıt bulunamadığında single() hata dönebilir, görmezden geliyoruz
+            setIsInWatchlist(false);
+        }
+    };
+
+    // Listeye ekle/çıkar fonksiyonu
+    const toggleWatchlist = async () => {
+        if (!user) {
+            router.push('/auth/login');
+            return;
+        }
+
+        try {
+            if (isInWatchlist) {
+                const { error } = await supabase
+                    .from('watchlist')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('movie_id', Number(id));
+
+                if (error) throw error;
+                setIsInWatchlist(false);
+            } else {
+                const { error } = await supabase
+                    .from('watchlist')
+                    .insert({
+                        user_id: user.id,
+                        movie_id: Number(id),
+                        movie_title: movie.title,
+                        poster_path: movie.poster_path
+                    });
+
+                if (error) throw error;
+                setIsInWatchlist(true);
+            }
+        } catch (error: any) {
+            Alert.alert("Hata", "İşlem gerçekleştirilemedi: " + error.message);
+        }
+    };
+
     const trailer = movie?.videos?.results?.find((v: any) => v.type === "Trailer" && v.site === "YouTube");
     const watchProviders = movie?.['watch/providers']?.results?.TR;
 
@@ -65,7 +123,7 @@ export default function MovieDetailScreen() {
         <View className="flex-1 bg-background">
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
 
-                {/* 1. Kapak Görseli ve Fragman Butonu */}
+                {/* 1. Kapak Görseli ve Navigasyon Butonları */}
                 <View className="relative h-[550px]">
                     <Image
                         source={{ uri: getImageUrl(movie?.poster_path) }}
@@ -77,12 +135,24 @@ export default function MovieDetailScreen() {
                         className="absolute inset-0"
                     />
 
-                    <SafeAreaView className="absolute top-0 left-6" edges={['top']}>
+                    {/* Üst Butonlar (Geri ve Kaydet) */}
+                    <SafeAreaView className="absolute top-0 left-0 right-0 px-6 flex-row justify-between" edges={['top']}>
                         <TouchableOpacity
                             onPress={() => router.back()}
                             className="bg-black/40 p-3 rounded-full border border-white/10"
                         >
                             <Ionicons name="chevron-back" size={24} color="white" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={toggleWatchlist}
+                            className={`p-3 rounded-full border ${isInWatchlist ? 'bg-primary border-primary' : 'bg-black/40 border-white/10'}`}
+                        >
+                            <Ionicons
+                                name={isInWatchlist ? "bookmark" : "bookmark-outline"}
+                                size={24}
+                                color="white"
+                            />
                         </TouchableOpacity>
                     </SafeAreaView>
 
@@ -159,7 +229,7 @@ export default function MovieDetailScreen() {
                         ))}
                     </ScrollView>
 
-                    {/* --- BENZER FİLMLER (DÜZELTİLDİ) --- */}
+                    {/* Benzer Filmler */}
                     {movie?.recommendations?.results?.length > 0 && (
                         <View className="mb-48">
                             <Text className="text-slate-500 font-bold mb-6 uppercase tracking-widest text-[10px]">BENZER FİLMLER</Text>

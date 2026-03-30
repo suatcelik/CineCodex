@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,171 +13,207 @@ export default function ProfileScreen() {
     const { t } = useTranslation();
     const router = useRouter();
 
+    const [activeTab, setActiveTab] = useState<'watched' | 'watchlist'>('watched');
     const [notes, setNotes] = useState<any[]>([]);
+    const [watchlist, setWatchlist] = useState<any[]>([]); // Watchlist için yeni state
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    // Verileri çekme ve Focus yönetimi
-    const fetchUserNotes = async () => {
+    // Her iki tabloyu (Notlar ve Watchlist) aynı anda çek
+    const fetchData = useCallback(async () => {
         if (!user) return;
         try {
-            const { data, error } = await supabase
+            // 1. İzlediklerim (Notlar tablosu)
+            const { data: notesData, error: notesError } = await supabase
                 .from('movie_notes')
                 .select('*')
                 .eq('user_id', user.id)
                 .order('updated_at', { ascending: false });
 
-            if (error) throw error;
-            setNotes(data || []);
+            if (notesError) throw notesError;
+
+            // 2. İzleyeceklerim (Watchlist tablosu)
+            const { data: watchData, error: watchError } = await supabase
+                .from('watchlist')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (watchError) throw watchError;
+
+            setNotes(notesData || []);
+            setWatchlist(watchData || []);
         } catch (error: any) {
             console.error("Veri çekme hatası:", error.message);
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [user]);
 
     useFocusEffect(
         useCallback(() => {
-            fetchUserNotes();
-        }, [user])
+            fetchData();
+        }, [fetchData])
     );
 
-    // --- SİLME İŞLEMİ ---
-    const handleDelete = (noteId: string, title: string) => {
-        Alert.alert(
-            "Notu Sil",
-            `"${title}" hakkındaki notunu kalıcı olarak silmek istediğine emin misin?`,
-            [
-                { text: "Vazgeç", style: "cancel" },
-                {
-                    text: "Sil",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            const { error } = await supabase
-                                .from('movie_notes')
-                                .delete()
-                                .eq('id', noteId)
-                                .eq('user_id', user?.id); // Güvenlik katmanı
+    // İstatistikler sadece İzlenenler üzerinden hesaplanır
+    const stats = useMemo(() => {
+        const count = notes.length;
+        const avg = count > 0
+            ? (notes.reduce((acc, curr) => acc + curr.rating, 0) / count).toFixed(1)
+            : "0.0";
+        return { count, avg };
+    }, [notes]);
 
-                            if (error) throw error;
+    // Uzun basınca silme işlemi (Hangi sekmedeysek ona göre tablo seçer)
+    const handleDelete = (itemId: string, title: string) => {
+        const isWatched = activeTab === 'watched';
+        const tableName = isWatched ? 'movie_notes' : 'watchlist';
+        const msg = isWatched ? 'notlarından' : 'izlenecekler listesinden';
 
-                            // Sadece başarılıysa listeden çıkar
-                            setNotes(prev => prev.filter(n => n.id !== noteId));
-                        } catch (err: any) {
-                            Alert.alert("Hata", "Not silinemedi: " + err.message);
-                        }
-                    }
+        Alert.alert("Silme İşlemi", `"${title}" ${msg} kalıcı olarak silinecek.`, [
+            { text: "Vazgeç", style: "cancel" },
+            {
+                text: "Sil",
+                style: "destructive",
+                onPress: async () => {
+                    const { error } = await supabase.from(tableName).delete().eq('id', itemId);
+                    if (!error) fetchData(); // Başarılıysa listeyi yenile
                 }
-            ]
-        );
+            }
+        ]);
     };
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchUserNotes();
+    // Kart Tasarımı (Sekmeye göre içerik değişir)
+    const renderMovieItem = ({ item }: { item: any }) => {
+        const isWatched = activeTab === 'watched';
+
+        return (
+            <TouchableOpacity
+                onPress={() => router.push(`/movie/${item.movie_id}`)}
+                onLongPress={() => handleDelete(item.id, item.movie_title)}
+                activeOpacity={0.8}
+                className="flex-row mb-4 items-center bg-surface border border-slate-800/50 p-4 rounded-[24px]"
+            >
+                <View className="flex-1 pr-4">
+                    <Text className="text-white font-bold text-base mb-1" numberOfLines={1}>
+                        {item.movie_title}
+                    </Text>
+                    <View className="flex-row items-center">
+                        {isWatched ? (
+                            <>
+                                <Ionicons name="star" size={12} color="#f59e0b" />
+                                <Text className="text-slate-400 text-[10px] ml-1 font-bold">{item.rating}/5</Text>
+                                <View className="w-1 h-1 rounded-full bg-slate-700 mx-2" />
+                                <Text className="text-slate-500 text-[10px]">
+                                    {new Date(item.updated_at).toLocaleDateString()}
+                                </Text>
+                            </>
+                        ) : (
+                            <>
+                                <Ionicons name="time-outline" size={12} color="#64748b" />
+                                <Text className="text-slate-500 text-[10px] ml-1">
+                                    {new Date(item.created_at).toLocaleDateString()} tarihinde eklendi
+                                </Text>
+                            </>
+                        )}
+                    </View>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#334155" />
+            </TouchableOpacity>
+        );
     };
 
     if (loading) return <Loader fullScreen />;
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
-            {/* Header ve Profil Bilgisi */}
+        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+            {/* Header */}
             <View className="px-6 py-4 flex-row justify-between items-center">
                 <View>
-                    <Text className="text-primary font-bold text-[10px] uppercase tracking-widest mb-1">
-                        {isPremium ? "PRO ÜYE" : "ÜCRETSİZ PLAN"}
-                    </Text>
-                    <Text className="text-white text-3xl font-black">
-                        {user?.email?.split('@')[0]}
+                    <Text className="text-white text-3xl font-black tracking-tighter">Kütüphanem</Text>
+                    <Text className="text-slate-500 text-xs font-bold uppercase mt-1">
+                        @{user?.email?.split('@')[0]}
                     </Text>
                 </View>
-                <TouchableOpacity onPress={() => router.push('/profile_settings')} className="bg-surface p-3 rounded-2xl border border-slate-800">
-                    <Ionicons name="settings-outline" size={24} color="white" />
+                <TouchableOpacity
+                    onPress={() => router.push('/profile_settings')}
+                    className="w-12 h-12 rounded-2xl bg-surface border border-slate-800 items-center justify-center"
+                >
+                    <Ionicons name="settings-sharp" size={20} color="white" />
                 </TouchableOpacity>
             </View>
 
-            {/* Premium İlerleme Barı */}
-            {!isPremium && (
-                <View className="px-6 mb-6">
-                    <TouchableOpacity onPress={() => router.push('/premium')} className="bg-surface border border-slate-800 rounded-3xl p-5">
-                        <View className="flex-row justify-between items-center mb-3">
-                            <Text className="text-slate-400 text-[10px] font-black uppercase tracking-tighter">Kotan</Text>
-                            <Text className="text-white text-xs font-bold">{notes.length} / 5</Text>
-                        </View>
-                        <View className="h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                            <View className="h-full bg-primary" style={{ width: `${Math.min((notes.length / 5) * 100, 100)}%` }} />
-                        </View>
-                    </TouchableOpacity>
-                </View>
-            )}
-
             {/* İstatistikler */}
-            <View className="flex-row px-6 mb-8 justify-between">
-                <View className="bg-surface border border-slate-800 rounded-3xl p-5 flex-1 mr-2 items-center">
-                    <Text className="text-primary text-2xl font-black">{notes.length}</Text>
-                    <Text className="text-slate-500 text-[10px] font-bold uppercase mt-1">İzlenen</Text>
+            <View className="flex-row px-6 mt-4 gap-x-4">
+                <View className="flex-1 bg-primary/10 border border-primary/20 rounded-[32px] p-5">
+                    <Text className="text-primary text-3xl font-black">{stats.count}</Text>
+                    <Text className="text-primary/60 text-[10px] font-bold uppercase mt-1 tracking-widest">İzlenen</Text>
                 </View>
-                <View className="bg-surface border border-slate-800 rounded-3xl p-5 flex-1 ml-2 items-center">
-                    <Text className="text-accent text-2xl font-black">
-                        {notes.length > 0 ? (notes.reduce((acc, curr) => acc + curr.rating, 0) / notes.length).toFixed(1) : "0.0"}
-                    </Text>
-                    <Text className="text-slate-500 text-[10px] font-bold uppercase mt-1">Ortalama</Text>
+                <View className="flex-1 bg-accent/10 border border-accent/20 rounded-[32px] p-5">
+                    <Text className="text-accent text-3xl font-black">{stats.avg}</Text>
+                    <Text className="text-accent/60 text-[10px] font-bold uppercase mt-1 tracking-widest">Ort. Puan</Text>
                 </View>
             </View>
 
-            {/* Liste */}
-            <View className="flex-1 px-6">
-                <Text className="text-white text-xl font-black mb-6">Sinema Günlüğüm</Text>
+            {/* Tab Switcher */}
+            <View className="flex-row px-6 mt-8 mb-6 bg-slate-900/50 mx-6 rounded-2xl p-1 border border-slate-800">
+                <TouchableOpacity
+                    onPress={() => setActiveTab('watched')}
+                    className={`flex-1 py-3 rounded-xl items-center ${activeTab === 'watched' ? 'bg-surface' : ''}`}
+                >
+                    <Text className={`font-bold text-xs ${activeTab === 'watched' ? 'text-white' : 'text-slate-500'}`}>İzlediklerim</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => setActiveTab('watchlist')}
+                    className={`flex-1 py-3 rounded-xl items-center ${activeTab === 'watchlist' ? 'bg-surface' : ''}`}
+                >
+                    <Text className={`font-bold text-xs ${activeTab === 'watchlist' ? 'text-white' : 'text-slate-500'}`}>İzleyeceklerim</Text>
+                </TouchableOpacity>
+            </View>
 
+            {/* İçerik Listesi */}
+            <View className="flex-1 px-6">
                 <FlatList
-                    data={notes}
+                    data={activeTab === 'watched' ? notes : watchlist}
                     keyExtractor={(item) => item.id.toString()}
                     showsVerticalScrollIndicator={false}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#dc2626" />}
-                    ListEmptyComponent={() => (
-                        <View className="items-center py-20 border border-dashed border-slate-800 rounded-[40px]">
-                            <Ionicons name="film-outline" size={60} color="#334155" />
-                            <TouchableOpacity onPress={() => router.push('/')} className="mt-8 bg-white px-10 py-4 rounded-full">
-                                <Text className="text-black font-black text-sm">KEŞFETMEYE BAŞLA</Text>
-                            </TouchableOpacity>
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchData} tintColor="#dc2626" />}
+                    ListEmptyComponent={
+                        <View className="items-center py-20 opacity-30">
+                            <Ionicons
+                                name={activeTab === 'watched' ? "film-outline" : "bookmark-outline"}
+                                size={64}
+                                color="#475569"
+                            />
+                            <Text className="text-slate-500 mt-4 font-bold text-center px-4">
+                                {activeTab === 'watched'
+                                    ? 'Henüz hiç film puanlamadın. Keşfetmeye başla!'
+                                    : 'İzlemek istediğin filmleri kaydet, burada biriksin.'}
+                            </Text>
                         </View>
-                    )}
-                    renderItem={({ item, index }) => (
-                        <View className="flex-row mb-8">
-                            <View className="items-center mr-4">
-                                <View className="w-3 h-3 rounded-full bg-primary mt-2" />
-                                {index !== notes.length - 1 && <View className="w-[2px] flex-1 bg-slate-800 my-2" />}
-                            </View>
-
-                            <TouchableOpacity
-                                onPress={() => router.push(`/movie/${item.movie_id}`)}
-                                onLongPress={() => handleDelete(item.id, item.movie_title)}
-                                className="flex-1 bg-surface border border-slate-800 rounded-3xl p-5 flex-row items-center"
-                            >
-                                <View className="flex-1 pr-4">
-                                    <Text className="text-white font-bold text-lg mb-1" numberOfLines={1}>
-                                        {item.movie_title}
-                                    </Text>
-                                    <View className="flex-row mb-2">
-                                        {[1, 2, 3, 4, 5].map((s) => (
-                                            <Ionicons key={s} name="star" size={12} color={item.rating >= s ? "#f59e0b" : "#1e293b"} style={{ marginRight: 2 }} />
-                                        ))}
-                                    </View>
-                                    <Text className="text-slate-400 text-xs italic" numberOfLines={2}>
-                                        "{item.note || '...'}"
-                                    </Text>
-                                </View>
-
-                                <TouchableOpacity onPress={() => handleDelete(item.id, item.movie_title)} className="p-2">
-                                    <Ionicons name="trash-outline" size={20} color="#475569" />
-                                </TouchableOpacity>
-                            </TouchableOpacity>
-                        </View>
-                    )}
+                    }
+                    renderItem={renderMovieItem}
+                    contentContainerStyle={{ paddingBottom: 120 }}
                 />
             </View>
+
+            {/* Pro Badge */}
+            {!isPremium && (
+                <TouchableOpacity
+                    onPress={() => router.push('/premium')}
+                    className="absolute bottom-6 left-6 right-6 bg-surface border border-slate-800 p-4 rounded-3xl flex-row justify-between items-center"
+                >
+                    <View className="flex-row items-center">
+                        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-3">
+                            <Ionicons name="flash" size={16} color="white" />
+                        </View>
+                        <Text className="text-white font-bold text-[10px] uppercase tracking-wider">PRO'YA GEÇ VE SINIRLARI KALDIR</Text>
+                    </View>
+                    <Ionicons name="arrow-forward" size={16} color="#475569" />
+                </TouchableOpacity>
+            )}
         </SafeAreaView>
     );
 }
