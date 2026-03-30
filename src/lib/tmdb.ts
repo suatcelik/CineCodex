@@ -7,7 +7,7 @@ const tmdbApi = axios.create({
     baseURL: BASE_URL,
     params: {
         api_key: TMDB_API_KEY,
-        language: 'tr-TR', // Bu dinamik olarak i18n'den gelecek
+        language: 'tr-TR',
     },
 });
 
@@ -21,20 +21,16 @@ export const getPopularMovies = async () => {
     return data.results;
 };
 
-// src/lib/tmdb.ts içindeki fonksiyonu buna çevir:
 export const getImageUrl = (path: string | null | undefined) =>
     path ? `https://image.tmdb.org/t/p/w500${path}` : null;
 
-
-
-// Film arama fonksiyonu
 export const searchMovies = async (query: string, language: string = 'tr-TR') => {
     if (!query) return [];
     const { data } = await tmdbApi.get('/search/movie', {
         params: {
             query,
             language,
-            include_adult: false, // Kullanıcının seçtiği dili kullanıyoruz
+            include_adult: false,
         },
     });
     return data.results;
@@ -43,7 +39,49 @@ export const searchMovies = async (query: string, language: string = 'tr-TR') =>
 export const getMovieDetails = async (movieId: number) => {
     const { data } = await tmdbApi.get(`/movie/${movieId}`, {
         params: {
-            append_to_response: 'credits', // Oyuncuları da beraberinde getirir
+            // credits: Oyuncular, videos: Fragmanlar, watch/providers: Platformlar, recommendations: Benzerler
+            append_to_response: 'credits,videos,watch/providers,recommendations',
+        },
+    });
+    return data;
+};
+
+// --- DÜZELTİLEN BÖLÜM ---
+export const getMoviesByGenre = async (genreId: number, language: string = 'tr-TR') => {
+    try {
+        const { data } = await tmdbApi.get('/discover/movie', {
+            params: {
+                with_genres: genreId,
+                language: language,
+                sort_by: 'popularity.desc',
+                include_adult: false,
+            },
+        });
+        return data.results;
+    } catch (error) {
+        console.error("Kategori filmleri çekilemedi:", error);
+        return [];
+    }
+};
+
+export const getMoviesByActor = async (personId: number, language: string = 'tr-TR') => {
+    try {
+        const { data } = await tmdbApi.get(`/person/${personId}/movie_credits`, {
+            params: { language },
+        });
+        // Oyuncunun en popüler filmlerini başa almak için oylama sayısına göre sıralayabiliriz
+        return data.cast.sort((a: any, b: any) => b.popularity - a.popularity);
+    } catch (error) {
+        console.error("Oyuncu filmleri çekilemedi:", error);
+        return [];
+    }
+};
+
+
+export const getPersonDetails = async (personId: number) => {
+    const { data } = await tmdbApi.get(`/person/${personId}`, {
+        params: {
+            append_to_response: 'movie_credits', // Filmleri de tek seferde getirir
         },
     });
     return data;

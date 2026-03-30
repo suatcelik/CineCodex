@@ -1,100 +1,142 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Alert, SafeAreaView, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
-import i18n from '../src/lib/i18n';
-import { supabase } from '../src/lib/supabase';
 import { useStore } from '../src/store/useStore';
 
-export default function SettingsScreen() {
-    const { profile } = useAuth();
-    const { language, setLanguage, setHasOnboarded } = useStore();
+export default function ProfileSettingsScreen() {
+    const { user, signOut, isPremium } = useAuth();
+    const { language, setLanguage } = useStore();
     const { t } = useTranslation();
     const router = useRouter();
 
-    const toggleLanguage = () => {
-        const newLang = language === 'tr' ? 'en' : 'tr';
-        i18n.changeLanguage(newLang);
-        setLanguage(newLang);
+    const handleSignOut = () => {
+        Alert.alert(
+            t('settings.logout_title') || "Çıkış Yap",
+            t('settings.logout_confirm') || "Hesabınızdan çıkış yapmak istediğinize emin misiniz?",
+            [
+                { text: t('cancel'), style: 'cancel' },
+                { text: t('logout'), style: 'destructive', onPress: () => signOut() }
+            ]
+        );
     };
 
-    const onShareTimeline = async () => {
-        try {
-            await Share.share({
-                message: `${profile?.username || 'CineCodex'} ${t('share_message', 'kullanıcısının film günlüğüne göz at!')}`,
-            });
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const handleLogout = async () => {
-        Alert.alert(t('logout'), t('logout_confirm'), [
-            { text: t('cancel'), style: 'cancel' },
-            {
-                text: t('logout'),
-                style: 'destructive',
-                onPress: async () => {
-                    await supabase.auth.signOut();
-                    setHasOnboarded(false); // Opsiyonel: Çıkışta onboarding'e geri döner
-                    router.replace('/onboarding');
-                }
-            },
-        ]);
-    };
+    const SettingItem = ({ icon, title, value, onPress, color = "#94a3b8", isLast = false }: any) => (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.7}
+            className={`flex-row items-center justify-between py-4 ${!isLast ? 'border-b border-slate-800/50' : ''}`}
+        >
+            <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-2xl bg-slate-800/50 items-center justify-center mr-4">
+                    <Ionicons name={icon} size={20} color={color} />
+                </View>
+                <Text className="text-slate-200 font-semibold text-base">{title}</Text>
+            </View>
+            <View className="flex-row items-center">
+                {value && <Text className="text-slate-500 mr-2">{value}</Text>}
+                <Ionicons name="chevron-forward" size={18} color="#475569" />
+            </View>
+        </TouchableOpacity>
+    );
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <ScrollView className="flex-1 px-6 pt-6">
-                <Text className="text-white text-4xl font-black mb-10">{t('settings')}</Text>
+            {/* Header */}
+            <View className="px-6 py-4 flex-row items-center">
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center mr-4"
+                >
+                    <Ionicons name="arrow-back" size={20} color="white" />
+                </TouchableOpacity>
+                <Text className="text-white text-2xl font-black">{t('Ayarlar')}</Text>
+            </View>
 
-                {/* Uygulama Tercihleri */}
-                <View className="bg-surface rounded-[32px] border border-slate-800 mb-6 overflow-hidden">
-                    <TouchableOpacity
-                        onPress={toggleLanguage}
-                        activeOpacity={0.7}
-                        className="p-6 flex-row items-center justify-between border-b border-slate-800"
-                    >
-                        <Text className="text-slate-300 font-bold text-base">{t('language')}</Text>
-                        <View className="bg-slate-800 px-4 py-2 rounded-xl">
-                            <Text className="text-white font-bold">{language === 'tr' ? 'Türkçe 🇹🇷' : 'English 🇺🇸'}</Text>
+            <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+
+                {/* 1. Hesap Kartı */}
+                <View className="bg-surface border border-slate-800 rounded-[32px] p-6 mb-8 mt-4">
+                    <View className="flex-row items-center mb-6">
+                        <View className="w-16 h-16 rounded-full bg-primary items-center justify-center">
+                            <Text className="text-white text-2xl font-black">
+                                {user?.email?.charAt(0).toUpperCase()}
+                            </Text>
                         </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={onShareTimeline}
-                        className="p-6 flex-row items-center justify-between"
-                    >
-                        <Text className="text-white font-bold text-base">{t('share_timeline')}</Text>
-                        <Text className="text-primary text-xl">🔗</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Üyelik ve Hesap */}
-                <View className="bg-surface rounded-[32px] border border-slate-800 mb-10 overflow-hidden">
-                    <TouchableOpacity
-                        onPress={() => router.push('/premium')}
-                        className="p-6 flex-row items-center justify-between border-b border-slate-800"
-                    >
-                        <View>
-                            <Text className="text-accent font-black text-lg italic">Premium</Text>
-                            <Text className="text-slate-500 text-xs mt-1">{t('premium_desc', 'Sınırsız not ve analizler')}</Text>
+                        <View className="ml-4">
+                            <Text className="text-white font-bold text-lg" numberOfLines={1}>
+                                {user?.email?.split('@')[0]}
+                            </Text>
+                            <Text className="text-slate-500 text-xs">{user?.email}</Text>
                         </View>
-                        <Text className="text-accent text-2xl">💎</Text>
-                    </TouchableOpacity>
+                    </View>
 
-                    <TouchableOpacity
-                        onPress={handleLogout}
-                        className="p-6 flex-row items-center justify-between"
-                    >
-                        <Text className="text-red-500 font-bold text-base">{t('logout')}</Text>
-                        <Text className="text-red-500 text-xl">🚪</Text>
-                    </TouchableOpacity>
+                    {!isPremium && (
+                        <TouchableOpacity
+                            onPress={() => router.push('/premium')}
+                            className="bg-primary py-4 rounded-2xl items-center"
+                        >
+                            <Text className="text-white font-black uppercase tracking-widest text-xs">
+                                Pro'ya Yükselt ✨
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
-                <View className="items-center py-10">
-                    <Text className="text-slate-700 font-bold tracking-[6px] text-[10px] uppercase">CineCodex v1.0</Text>
+                {/* 2. Uygulama Ayarları */}
+                <Text className="text-slate-500 font-bold mb-4 ml-2 uppercase tracking-widest text-[10px]">Uygulama</Text>
+                <View className="bg-surface border border-slate-800 rounded-[32px] px-6 mb-8">
+                    <SettingItem
+                        icon="language-outline"
+                        title="Dil / Language"
+                        value={language === 'tr' ? 'Türkçe' : 'English'}
+                        onPress={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
+                    />
+                    <SettingItem
+                        icon="notifications-outline"
+                        title="Bildirimler"
+                        onPress={() => { }}
+                    />
+                    <SettingItem
+                        icon="color-palette-outline"
+                        title="Tema"
+                        value="Koyu"
+                        isLast={true}
+                    />
                 </View>
+
+                {/* 3. Destek & Bilgi */}
+                <Text className="text-slate-500 font-bold mb-4 ml-2 uppercase tracking-widest text-[10px]">Destek</Text>
+                <View className="bg-surface border border-slate-800 rounded-[32px] px-6 mb-8">
+                    <SettingItem
+                        icon="star-outline"
+                        title="Uygulamayı Puanla"
+                        onPress={() => { }}
+                    />
+                    <SettingItem
+                        icon="shield-checkmark-outline"
+                        title="Gizlilik Politikası"
+                        onPress={() => { }}
+                    />
+                    <SettingItem
+                        icon="information-circle-outline"
+                        title="Hakkında"
+                        isLast={true}
+                        onPress={() => { }}
+                    />
+                </View>
+
+                {/* 4. Çıkış Butonu */}
+                <TouchableOpacity
+                    onPress={handleSignOut}
+                    className="flex-row items-center justify-center py-6 mb-20"
+                >
+                    <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+                    <Text className="text-red-500 font-bold ml-2 text-base">Çıkış Yap</Text>
+                </TouchableOpacity>
+
             </ScrollView>
         </SafeAreaView>
     );
