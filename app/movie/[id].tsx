@@ -126,7 +126,8 @@ export default function MovieDetailScreen() {
                 {/* 1. Kapak Görseli ve Navigasyon Butonları */}
                 <View className="relative h-[550px]">
                     <Image
-                        source={{ uri: getImageUrl(movie?.poster_path) }}
+                        // DÜZELTME: || '' eklendi
+                        source={{ uri: getImageUrl(movie?.poster_path) || '' }}
                         className="w-full h-full"
                         resizeMode="cover"
                     />
@@ -221,7 +222,8 @@ export default function MovieDetailScreen() {
                         {movie?.credits?.cast?.slice(0, 10).map((person: any) => (
                             <TouchableOpacity key={person.id} onPress={() => handleActorPress(person.id)} className="mr-6 items-center w-20">
                                 <Image
-                                    source={{ uri: getImageUrl(person.profile_path) }}
+                                    // DÜZELTME: || '' eklendi
+                                    source={{ uri: getImageUrl(person.profile_path) || '' }}
                                     className="w-20 h-20 rounded-full bg-surface border border-slate-800"
                                 />
                                 <Text className="text-white text-[10px] font-bold mt-3 text-center" numberOfLines={2}>{person.name}</Text>
@@ -241,7 +243,8 @@ export default function MovieDetailScreen() {
                                         className="mr-4 w-32"
                                     >
                                         <Image
-                                            source={{ uri: getImageUrl(item.poster_path) }}
+                                            // DÜZELTME: || '' eklendi
+                                            source={{ uri: getImageUrl(item.poster_path) || '' }}
                                             className="w-32 h-48 rounded-3xl bg-surface"
                                             resizeMode="cover"
                                         />

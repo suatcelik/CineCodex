@@ -44,7 +44,8 @@ export default function PersonDetailScreen() {
                 {/* 1. Üst Kısım: Büyük Portre */}
                 <View className="relative h-[550px]">
                     <Image
-                        source={{ uri: getImageUrl(person?.profile_path) }}
+                        // DÜZELTME: || '' eklendi
+                        source={{ uri: getImageUrl(person?.profile_path) || '' }}
                         className="w-full h-full"
                         resizeMode="cover"
                     />
@@ -121,7 +122,8 @@ export default function PersonDetailScreen() {
                             >
                                 <View className="bg-surface rounded-[28px] overflow-hidden border border-slate-800">
                                     <Image
-                                        source={{ uri: getImageUrl(movie.poster_path) }}
+                                        // DÜZELTME: || '' eklendi
+                                        source={{ uri: getImageUrl(movie.poster_path) || '' }}
                                         className="w-full h-64"
                                         resizeMode="cover"
                                     />
@@ -132,7 +134,8 @@ export default function PersonDetailScreen() {
                                         <View className="flex-row items-center mt-1">
                                             <Ionicons name="star" size={10} color="#f59e0b" />
                                             <Text className="text-slate-400 text-[9px] ml-1 font-bold">
-                                                {movie.vote_average?.toFixed(1)}
+                                                {/* DÜZELTME: || '0.0' eklendi */}
+                                                {movie.vote_average?.toFixed(1) || '0.0'}
                                             </Text>
                                         </View>
                                     </View>

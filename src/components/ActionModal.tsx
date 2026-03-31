@@ -6,14 +6,17 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Text, 
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
+// DÜZELTME 1: posterPath buraya eklendi
 interface ActionModalProps {
     isVisible: boolean;
     onClose: () => void;
     movieId: number;
     movieTitle: string;
+    posterPath: string;
 }
 
-export default function ActionModal({ isVisible, onClose, movieId, movieTitle }: ActionModalProps) {
+// DÜZELTME 2: posterPath bileşen parametrelerine eklendi
+export default function ActionModal({ isVisible, onClose, movieId, movieTitle, posterPath }: ActionModalProps) {
     const { t } = useTranslation();
     const { user, isPremium } = useAuth();
     const router = useRouter();
@@ -76,6 +79,7 @@ export default function ActionModal({ isVisible, onClose, movieId, movieTitle }:
                 user_id: user.id, // RLS için zorunlu
                 movie_id: movieId,
                 movie_title: movieTitle,
+                poster_path: posterPath, // İsterseniz Supabase'e posterPath'i de kaydedebilirsiniz
                 rating: rating,
                 note: note,
                 updated_at: new Date().toISOString(),

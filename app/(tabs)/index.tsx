@@ -3,9 +3,11 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { getImageUrl, getTrendingMovies } from '../../src/lib/tmdb';
+import { Movie } from '../../src/types'; // 1. Movie tipi eklendi
 
 export default function HomeScreen() {
-    const [trending, setTrending] = useState([]);
+    // 2. State için tip tanımlaması yapıldı
+    const [trending, setTrending] = useState<Movie[]>([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -28,7 +30,8 @@ export default function HomeScreen() {
                             className="w-screen h-full"
                         >
                             <Image
-                                source={{ uri: getImageUrl(item.poster_path) }}
+                                // 3. String tipini garantiye almak için '|| ""' eklendi
+                                source={{ uri: getImageUrl(item.poster_path) || '' }}
                                 className="w-full h-full"
                                 resizeMode="cover"
                             />
@@ -61,12 +64,14 @@ export default function HomeScreen() {
                             className="mr-4 w-32"
                         >
                             <Image
-                                source={{ uri: getImageUrl(item.poster_path) }}
+                                // 3. String tipini garantiye almak için '|| ""' eklendi
+                                source={{ uri: getImageUrl(item.poster_path) || '' }}
                                 className="w-32 h-48 rounded-2xl border border-slate-800"
                             />
                             <Text className="text-slate-300 mt-2 font-semibold" numberOfLines={1}>{item.title}</Text>
                             <View className="flex-row items-center mt-1">
-                                <Text className="text-accent text-xs font-bold">★ {item.vote_average.toFixed(1)}</Text>
+                                {/* Olası undefined hatalarını önlemek için güvenli kullanım (?) eklendi */}
+                                <Text className="text-accent text-xs font-bold">★ {item.vote_average?.toFixed(1) || '0.0'}</Text>
                             </View>
                         </TouchableOpacity>
                     )}
