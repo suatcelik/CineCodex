@@ -3,10 +3,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { getImageUrl, getTrendingMovies } from '../../src/lib/tmdb';
-import { Movie } from '../../src/types'; // 1. Movie tipi eklendi
+import { Movie } from '../../src/types';
 
 export default function HomeScreen() {
-    // 2. State için tip tanımlaması yapıldı
     const [trending, setTrending] = useState<Movie[]>([]);
     const router = useRouter();
 
@@ -15,7 +14,7 @@ export default function HomeScreen() {
     }, []);
 
     return (
-        <ScrollView className="flex-1 bg-background">
+        <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
             {/* 1. Hero Section (Trend Slider) */}
             <View className="h-[450px] w-full">
                 <FlatList
@@ -30,7 +29,6 @@ export default function HomeScreen() {
                             className="w-screen h-full"
                         >
                             <Image
-                                // 3. String tipini garantiye almak için '|| ""' eklendi
                                 source={{ uri: getImageUrl(item.poster_path) || '' }}
                                 className="w-full h-full"
                                 resizeMode="cover"
@@ -51,7 +49,10 @@ export default function HomeScreen() {
             <View className="px-6 mt-8">
                 <View className="flex-row justify-between items-center mb-4">
                     <Text className="text-white text-xl font-bold tracking-tight">Topluluk Ne İzliyor?</Text>
-                    <TouchableOpacity><Text className="text-primary font-medium">Tümünü Gör</Text></TouchableOpacity>
+                    {/* YENİ: Yönlendirme eklendi */}
+                    <TouchableOpacity onPress={() => router.push('/trending')} activeOpacity={0.7}>
+                        <Text className="text-primary font-medium">Tümünü Gör</Text>
+                    </TouchableOpacity>
                 </View>
 
                 <FlatList
@@ -62,15 +63,14 @@ export default function HomeScreen() {
                         <TouchableOpacity
                             onPress={() => router.push(`/movie/${item.id}`)}
                             className="mr-4 w-32"
+                            activeOpacity={0.8}
                         >
                             <Image
-                                // 3. String tipini garantiye almak için '|| ""' eklendi
                                 source={{ uri: getImageUrl(item.poster_path) || '' }}
                                 className="w-32 h-48 rounded-2xl border border-slate-800"
                             />
                             <Text className="text-slate-300 mt-2 font-semibold" numberOfLines={1}>{item.title}</Text>
                             <View className="flex-row items-center mt-1">
-                                {/* Olası undefined hatalarını önlemek için güvenli kullanım (?) eklendi */}
                                 <Text className="text-accent text-xs font-bold">★ {item.vote_average?.toFixed(1) || '0.0'}</Text>
                             </View>
                         </TouchableOpacity>
@@ -78,12 +78,16 @@ export default function HomeScreen() {
                 />
             </View>
 
-            {/* 3. "Not Almaya Başla" CTA (Harekete Geçirici Mesaj) */}
+            {/* 3. CTA */}
             <View className="mx-6 my-10 p-6 bg-surface rounded-3xl border border-slate-800">
                 <Text className="text-white text-lg font-bold">Unutma, Kaydet!</Text>
                 <Text className="text-slate-400 mt-1">İzlediğin filmlere not tutarak kendi sinema kütüphaneni oluştur.</Text>
-                <TouchableOpacity className="bg-white mt-4 py-3 rounded-full">
-                    <Text className="text-black text-center font-bold text-base">Hemen Keşfet</Text>
+                <TouchableOpacity
+                    onPress={() => router.push('/search')}
+                    activeOpacity={0.8}
+                    className="bg-white mt-4 py-3 rounded-full"
+                >
+                    <Text className="text-black text-center font-bold text-base">Keşfetmeye Başla</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>
